@@ -730,6 +730,18 @@
 
 													});
 												}
+												else if ( item_ou.level == 1)
+												{
+													// Manage the case of root org unit
+													$.each( me.userAccessableOrgUnits, function( i_userOU, item_userOU)
+													{
+														if ( item_userOU.id == item_ou.id )
+														{
+															isUserAccessOU = true;
+															return false;
+														}
+													});
+												}
 
 												if ( isUserAccessOU )
 												{													
