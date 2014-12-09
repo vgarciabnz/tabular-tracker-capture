@@ -7,6 +7,12 @@
 	,"launch_path":"index.html"
 	,"installs_allowed_from":null
 	,"default_locale":"en"
+	,"locales": {
+		"es": {
+			"name" : "Entrada tabular",
+			"description" : "Para ayudar con la entrada"
+		}
+	}
 	,"activities": {
 	  "dhis": { "href": "*" }
 	}

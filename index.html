@@ -3,7 +3,7 @@
 <head>
 <title>Tabular Tracker Capture</title>
 <meta charset="UTF-8">
-
+	
 	<script src="js/jQuery/jquery-1.11.1.min.js"></script>
 	<script src="js/jQuery/jquery-ui.min.js"></script>
 	<script src="js/jQuery/jquery.ui.core.js"></script>
@@ -24,6 +24,10 @@
 	<link rel="stylesheet" href="css/jQuery/jquery-ui.css" />
 	<link rel="stylesheet" href="css/gmap3/gmap3-menu.css" />
 	<link rel="stylesheet" href="css/app/style.css">
+
+	<link rel="resource" type="application/l10n" href="locales/locales.ini" />
+	<script src="js/l10n.js"></script>
+
 	<script>
 
 		// Global variables/objects
@@ -96,20 +100,36 @@
 		var _weekStartDate;
 		var _weekEndDate;
 
+
 		// =========================================================
-		// On Page Load Run
-
-		$( document ).ready( function() {
-
-			// Create a static class method for these setup.
-			DialogLoading.initialSetup();
-
-
-			// ------------ Run once after page load ------------
-			_TabularDEObj = new TabularDataEntry();
-
+		// On localization and page load run
+		var userLanguage;
+		var l10n;
+		var appInitialized = false;
+		
+		// This method is called when localization and page are loaded
+		document.webL10n.ready( function() {
+			l10n = document.webL10n;
+			
+			if( userLanguage == null ) {
+				// First call to document.webL10n.ready
+				RESTUtil.getAsynchData( _queryURL_me + '/user-account.json'
+				, function( json_data ) 
+				{
+					userLanguage = json_data.settings.keyUiLocale;
+					l10n.setLanguage(userLanguage);
+				});
+			} else if ( !appInitialized ){
+				// Second call to document.webL10n.ready
+				// Create a static class method for these setup.
+				DialogLoading.initialSetup();
+		
+				// ------------ Run once after page load ------------
+				_TabularDEObj = new TabularDataEntry();
+				appInitialized = true;
+			} 
+			
 		});
-
 
 		// Class / Function Orders
 
@@ -419,6 +439,7 @@
 			this.queryURL_OrgUnitNameQuery = _queryURL_api + 'organisationUnits.json'; 
 			
 			// Tages..
+			this.appTitleTag = $( '#appTitle' );
 			this.orgUnitMapSmall_DivTag = $( '#orgUnitMapSmall' );
 			this.orgUnitRowTag = $( '#orgUnitRow' );
 			this.orgUnitNameTag = $( '#orgUnitName' );	// Default OrgUnit Search By Name
@@ -1176,6 +1197,7 @@
 					me.TabularDEObj.retrieveAndPopulateEvents( me.TabularDEObj.personList.personEvent.mainEventTableTag, function( eventFoundNo )
 					{
 
+
 						me.searchResultMsgRowTag.show();
 						me.searchResultMessageTag.text( "Found " + eventFoundNo + " event(s) for period from " + $.format.date( me.getDefaultStartDate(), "dd/MM/yyyy" ) + " to " + $.format.date( me.getDefaultEndDate(), "dd/MM/yyyy" ) + " at " + me.orgUnitNameTag.val() );
 						
@@ -1246,6 +1268,7 @@
 				
 				me.retrieveUserAccessOrgUnits( function()
 				{
+					me.appTitleTag.show();
 					me.orgUnitRowTag.show();
 					Util.paintAttention( me.orgUnitNameTag );
 					me.orgUnitNameTag.focus();
@@ -1639,10 +1662,10 @@
 			this.trTemplate_PersonRow = "<td DEID='personDetailToggle'><input type='image' class='personRowDelete' alt='Delete Row' title='Delete Row' src='img/cross.png' style='border: 0px solid;' /><a class='detailToggle' href='' style='display:none;'>[+]</a></td>";
 									  //+ "</tr>";
 
-			this.itemTemplate_PersonInputAndInfo = "<input type='text' class='personSelect jq_watermark' placeholder='Search or add new person' size='25' />"
-									+ "<button type='button' class='personInfo input_button_round' infoType='" + me.personDialogForm.type_New + "' style='display:none; margin:2px 4px 2px 3px;background-color:#cccccc;' ><span nameId='AddPerson'>Add Person</span></button>"
-									+ "<button type='button' class='personInfo input_button_round' infoType='" + me.personDialogForm.type_Exist + "' style='display:none; margin:2px 4px 2px 3px;background-color:#cccccc;' ><span nameId='UpdatePerson'>Update Person</span></button>"
-									+ "<img class='personInfoImg' src='img/info.png' alt='person Info' title='Update Person' style='display:none;border: 0px;' />"
+			this.itemTemplate_PersonInputAndInfo = "<input type='text' class='personSelect jq_watermark' placeholder='" + l10n.get('searchOrAddPerson') + "' size='25' />"
+									+ "<button type='button' class='personInfo input_button_round' infoType='" + me.personDialogForm.type_New + "' style='display:none; margin:2px 4px 2px 3px;background-color:#cccccc;' ><span nameId='AddPerson'>" + l10n.get('addPerson') + "</span></button>"
+									+ "<button type='button' class='personInfo input_button_round' infoType='" + me.personDialogForm.type_Exist + "' style='display:none; margin:2px 4px 2px 3px;background-color:#cccccc;' ><span nameId='UpdatePerson'>" + l10n.get('updatePerson') + "</span></button>"
+									+ "<img class='personInfoImg' src='img/info.png' alt='person Info' title='" + l10n.get('updatePerson') + "' style='display:none;border: 0px;' />"
 									+ "<span class='personEventCountSec' style='display:none;color:#585858;font-size:9px;font-style:italic;'>&nbsp;<span class='personEventCount'></span></span>";
 
 			this.trTemplate_PersonDetail = "<td class='blank' colspan='0'></td>";
@@ -1765,7 +1788,7 @@
 
 
 				// Add the last org info - the org the person belongs to. ID gets populated later
-				personTableHeader.append( "<th class='orig' type='homeUnit' orguintid=''>Home Unit</th>" );
+				personTableHeader.append( "<th class='orig' type='homeUnit' orguintid=''>" + l10n.get('homeUnit') + "</th>" );
 			}
 
 
@@ -2349,16 +2372,15 @@
 				var tdDetailSection = trDetailRow.find( 'td.blank' );
 				var personId = item_Person.trackedEntityInstance;
 
-
 				tdDetailSection.html( '' ).append( "<div class='divPersonDetail'><table class='tbStyle_PersonDetail'>"
 											+ "<tr class='trEventHead'>"
-												+ "<th class='orig'><span nameId='EventTableHeader_Date_OrgUnit'>Date / OrgUnit</span></th>"
-												+ "<th class='orig'><span nameId='EventTableHeader_Program_Stage'>Program / Stage</span></th>"
-												+ "<th class='orig' align='center'><span nameId='EventTableHeader_Status'>Status</span></th>"
+												+ "<th class='orig'><span nameId='EventTableHeader_Date_OrgUnit'>" + l10n.get('dateOrgunit') + "</span></th>"
+												+ "<th class='orig'><span nameId='EventTableHeader_Program_Stage'>" + l10n.get('programAndStage') + "</span></th>"
+												+ "<th class='orig' align='center'><span nameId='EventTableHeader_Status'>" + l10n.get('status') + "</span></th>"
 												+ "<th class='orig' type='delete'>&nbsp;</th>"
 											+ "</tr>"
 										+ "</table>"
-										+ "<div class='divAddEvent' style='margin:2px 1px 2px 20px;'><span><button type='button' class='personEvent_addNewRow input_button' style='display:none;'><span nameId='AddNewEventRow'>Add Event</span></button></span><span style='width:24px;'>&nbsp;</span></div></div>" );
+										+ "<div class='divAddEvent' style='margin:2px 1px 2px 20px;'><span><button type='button' class='personEvent_addNewRow input_button' style='display:none;'><span nameId='AddNewEventRow'>" + l10n.get('addEvent') + "</span></button></span><span style='width:24px;'>&nbsp;</span></div></div>" );
 
 
 				var tbEvent = trDetailRow.find( '.tbStyle_PersonDetail' );
@@ -2762,7 +2784,7 @@
 											+ "<td class='orig tdEventDelete'><input type='image' class='eventRowDelete' alt='Delete Row' title='Delete Row' src='img/cross.png' style='border: 0px solid;' /><input type='image' class='eventDelete' alt='Delete Event' title='Delete Event' src='img/cross.png' style='display:none; border: 0px solid;' /></td>";
 
 
-			this.buttonTemplate_Complete = "<button type='button' class='eventComplete input_button_round' style='display:none;'><span nameId='CompleteEvent'>Complete</span></button>";
+			this.buttonTemplate_Complete = "<button type='button' class='eventComplete input_button_round' style='display:none;'><span nameId='CompleteEvent'>" + l10n.get('complete') + "</span></button>";
 
 			this.thTemplate_CompleteButton = "<th class='added' colcount='' type='completed_button'>&nbsp;</th>";
 			this.tdTemplate_CompleteButton = "<td class='added' type='completed_button' colcount=''>" + this.buttonTemplate_Complete + "</td>";
@@ -4914,7 +4936,7 @@
 					var programTrackedEntityAttributes = me.TabularDEObj.getProgramTrackedEntityAttributes();
 
 					
-					me.personDialogTableTag.append("<tr><td colspan='2' style='font-weight:bold;'>Attributes</td></tr>");
+					me.personDialogTableTag.append("<tr><td colspan='2' style='font-weight:bold;'>" + l10n.get('attributes') + "</td></tr>");
 					me.RenderPersonElements( programTrackedEntityAttributes, me.SetRowControls_Attribute );
 
 
@@ -5630,7 +5652,7 @@
 				RESTUtil.getAsynchData( me.queryURL_orgUnitLevels
 				, function( json_Data )
 				{
-					listTag.append( '<option value="">Select OrganisationUnit Level</option>' );
+					listTag.append( '<option value="">' + l10n.get('selectOrgunitLevel') + '</option>' );
 
 					if ( json_Data !== undefined )
 					{
@@ -5640,7 +5662,7 @@
 
 						$.each( json_Levels_Sorted, function( i, item ) {
 
-							listTag.append( $( '<option></option>' ).attr( "value", item.level ).text( 'Level ' + item.level + ' - ' + item.name ) );
+							listTag.append( $( '<option></option>' ).attr( "value", item.level ).text( l10n.get('level') + ' ' + item.level + ' - ' + item.name ) );
 						});
 					}
 				}
@@ -6013,18 +6035,18 @@
 			yearTag.empty();
 
 			// Populate the month and year list
-			monthTag.append( $( '<option></option>' ).attr( "value", 1 ).text( "January" ) );
-			monthTag.append( $( '<option></option>' ).attr( "value", 2 ).text( "February" ) );
-			monthTag.append( $( '<option></option>' ).attr( "value", 3 ).text( "March" ) );
-			monthTag.append( $( '<option></option>' ).attr( "value", 4 ).text( "April" ) );
-			monthTag.append( $( '<option></option>' ).attr( "value", 5 ).text( "May" ) );
-			monthTag.append( $( '<option></option>' ).attr( "value", 6 ).text( "June" ) );
-			monthTag.append( $( '<option></option>' ).attr( "value", 7 ).text( "July" ) );
-			monthTag.append( $( '<option></option>' ).attr( "value", 8 ).text( "August" ) );
-			monthTag.append( $( '<option></option>' ).attr( "value", 9 ).text( "September" ) );
-			monthTag.append( $( '<option></option>' ).attr( "value", 10 ).text( "October" ) );
-			monthTag.append( $( '<option></option>' ).attr( "value", 11 ).text( "November" ) );
-			monthTag.append( $( '<option></option>' ).attr( "value", 12 ).text( "December" ) );
+			monthTag.append( $( '<option></option>' ).attr( "value", 1 ).text( l10n.get("January") ) );
+			monthTag.append( $( '<option></option>' ).attr( "value", 2 ).text( l10n.get("February") ) );
+			monthTag.append( $( '<option></option>' ).attr( "value", 3 ).text( l10n.get("March") ) );
+			monthTag.append( $( '<option></option>' ).attr( "value", 4 ).text( l10n.get("April") ) );
+			monthTag.append( $( '<option></option>' ).attr( "value", 5 ).text( l10n.get("May") ) );
+			monthTag.append( $( '<option></option>' ).attr( "value", 6 ).text( l10n.get("June") ) );
+			monthTag.append( $( '<option></option>' ).attr( "value", 7 ).text( l10n.get("July") ) );
+			monthTag.append( $( '<option></option>' ).attr( "value", 8 ).text( l10n.get("August") ) );
+			monthTag.append( $( '<option></option>' ).attr( "value", 9 ).text( l10n.get("September") ) );
+			monthTag.append( $( '<option></option>' ).attr( "value", 10 ).text( l10n.get("October") ) );
+			monthTag.append( $( '<option></option>' ).attr( "value", 11 ).text( l10n.get("November") ) );
+			monthTag.append( $( '<option></option>' ).attr( "value", 12 ).text( l10n.get("December") ) );
 			
 			for( i = 1990; i < 2020; i++ )
 			{
@@ -6089,7 +6111,7 @@
 		// -------------------------------------------
 
 	</script>
-
+			
 </head>
 
 <body>
@@ -6106,14 +6128,16 @@
 				<img src="img/loading_big_blue.gif" alt="Loading" />
 			</td>
 			<td height="50px" valign="middle" align="left" style="font-size: medium;">
-				&nbsp;&nbsp;- Loading....
+				&nbsp;&nbsp;- 
+			</td>
+			<td data-l10n-id="loading" height="50px" valign="middle" align="left" style="font-size: medium;">
 			</td>
 		</tr>
 	</table>
 </div>
 
-<div id="personDialogForm" class="ui-widget" style="margin:0;padding:0;">
-	<b><span nameId='PersonInfo'>Person Info</span></b>
+<div id="personDialogForm" class="ui-widget" style="margin:0;padding:0;display:none;">
+	<b><span data-l10n-id="personInfo" nameId='PersonInfo' ></span></b>
 	<table id="person_Table" class="tbBorder" style="width:97%;">
 	</table>
 	<input id="person_Result" type="hidden" />
@@ -6121,8 +6145,8 @@
 	<input id="person_id" type="hidden" />
 </div>		
 
-<div id="languageDialogForm" class="ui-widget" style="margin:0;padding:0;">
-	<b><span nameId='LanguageTranslation'>Language Translation</span></b>
+<div id="languageDialogForm" class="ui-widget" style="margin:0;padding:0;display:none;">
+	<b><span data-l10n-id="languageTranslation" nameId='LanguageTranslation'></span></b>
 	<table id="language_Table" class="listTable" style="width:95%;">
 	</table>
 </div>
@@ -6131,13 +6155,13 @@
 	<div id="orgUnitMapBig" class="gmap3"></div>
 </div>
 
-<div id="settingDialogForm" class="ui-widget" style="margin:0;padding:0;">
-	<b><span nameId='SettingFormTitle'>App Setting</span></b>
+<div id="settingDialogForm" class="ui-widget" style="margin:0;padding:0;display:none;">
+	<b><span data-l10n-id="appSetting" nameId='SettingFormTitle'></span></b>
 	<br>
 	<br>
 	<table id="setting_Table" class="listTable" style="width:95%;">
 		<tr>
-			<td>Country Level <span title='Compulsory' class='mandatory'>*</span></td><td><select id="countryLevels"></select></td>
+			<td data-l10n-id="countryLevel"> <span title='Compulsory' class='mandatory'>*</span></td><td><select id="countryLevels"></select></td>
 		</tr>
 	</table>
 </div>
@@ -6148,8 +6172,8 @@
 	<span id="headerText" style="cursor:pointer" title="View home page"></span>
 	<div id="headerRightSideControls">			
 		<select id="language" style="background-color: White;"></select>&nbsp;<a id="languageEdit" href='' style="color: White;" >[E]</a>
-			| <a href='' id='settingFormOpen' style="color: White;">Setting</a> | <a href="https://docs.google.com/document/d/1S6WD_oYdewVWFvsDnr1CL8yM2easN5mDc7j8QWI09Sw" target="_blank" style="color: White;">v 1.14</a>
-			| <button type="button" id="closeButton"><span nameId='closeButton'>Close</span></button>
+			| <a href='' id='settingFormOpen' style="color: White;" data-l10n-id="setting"></a> | <a href="https://docs.google.com/document/d/1S6WD_oYdewVWFvsDnr1CL8yM2easN5mDc7j8QWI09Sw" target="_blank" style="color: White;">v 1.14</a>
+			| <button type="button" id="closeButton"><span data-l10n-id="close" nameId='closeButton'></span></button>
 	</div>
 </div>
 
@@ -6161,8 +6185,8 @@
 
 				<div style="margin-top: 3px;">
 
-					<span nameId='MainTitle' class="pageTitle">Tabular Event/Tracker Capture</span><br>
-
+					<span data-l10n-id="appTitle" id="appTitle" nameId='MainTitle' class="pageTitle" style="display:none;"></span><br>
+					
 					<table id="settingConsole" class="tbBorderNone">
 					  <tr class="valignTop">
 
@@ -6170,7 +6194,7 @@
 							<table>
 							<tr>
 							  <td class="consoleTitle">	
-								<span nameId='OrgUnit'>Org Unit:</span>
+								<span data-l10n-id="searchOrgUnit" nameId='OrgUnit'></span>
 							  </td>
 							  <td style="white-space: nowrap;">
 								<input type="text" id="orgUnitName" size="30"/><span id="personFoundNo" style="font-size: 9px;color:#CCCCCC;"></span>
@@ -6179,11 +6203,11 @@
 							 </table>
 
 							<div id='orgUnitLoading' style='display:none'>
-								<img src='img/ui-anim_basic.gif'/> retrieving..
+								<img src='img/ui-anim_basic.gif'/><span data-l10n-id="retrieving"></span>
 							</div>
 
 							<div id='orgUnitLoading2' style='display:none'>
-								<img src='img/ui-anim_basic.gif'/> retrieving..
+								<img src='img/ui-anim_basic.gif'/><span data-l10n-id="retrieving"></span>
 							</div>
 
 						</td>
@@ -6192,7 +6216,7 @@
 							<table>
 							<tr>
 							  <td class="consoleTitle">	
-								<span nameId='DefaultProgram'>Program:</span>
+								<span data-l10n-id="searchProgram" nameId='DefaultProgram'></span>
 							  </td>
 							  <td>
 								<select id="defaultProgram"></select> 
@@ -6201,7 +6225,7 @@
 							 </table>
 
 							<div id='programLoading' style='display:none'>
-								<img src='img/ui-anim_basic.gif'/> loading..
+								<img src='img/ui-anim_basic.gif'/><span data-l10n-id="loading"></span>
 							</div>
 
 						</td>
@@ -6210,12 +6234,12 @@
 							<table>
 							<tr>
 							  <td class="consoleTitle">	
-								<span nameId='Period'>Period:</span>
+								<span data-l10n-id="searchPeriod" nameId='Period'></span>
 							  </td>
 							  <td style="white-space: nowrap;">
-								<input type="radio" name="period" value="month"/><span nameId='PeriodMonth'>Month</span>
-								<input type="radio" name="period" value="week"/><span nameId='PeriodWeek'>Week</span>
-								<input type="radio" name="period" value="custom"/><span nameId='PeriodOther'>Custom</span>
+								<input type="radio" name="period" value="month"/><span data-l10n-id="month" nameId='PeriodMonth'></span>
+								<input type="radio" name="period" value="week"/><span data-l10n-id="week" nameId='PeriodWeek'></span>
+								<input type="radio" name="period" value="custom"/><span data-l10n-id="custom" nameId='PeriodOther'></span>
 								
 								<span id="defaultMonth" style="display:none;"><select id="defaultMonth_Month"></select> <select id="defaultMonth_Year"></select></span> 
 
@@ -6230,14 +6254,14 @@
 					  <tr id="personEventSearchOptions" style="display:none;">
 						<td colspan="3" class="valignTop">
 
-							<span nameId='ProgramStatus'>Program Status:</span><select id="programStatusList">
-								<option value="ACTIVE">Active</option>
-								<option value="COMPLETED">Completed</option>
-								<option value="CANCELLED">Cancelled</option>
+							<span data-l10n-id="programStatus" nameId='ProgramStatus'></span><select id="programStatusList">
+								<option data-l10n-id="active" value="ACTIVE"></option>
+								<option data-l10n-id="completed" value="COMPLETED"></option>
+								<option data-l10n-id="cancelled" value="CANCELLED"></option>
 							</select>&nbsp;&nbsp;
 
-							<input id="searchAllProgram" type="checkbox" style="vertical-align:bottom;" /><span nameId='SearchAllProgram' style="color:#222222; font-style:italic;">Search All Program Under Person</span>&nbsp;&nbsp;&nbsp;
-							<input id="listAllPersonHistoricalEvents" type="checkbox" style="vertical-align:bottom;" /><span nameId='ListAllHistoricalEvents' style="color:#222222; font-style:italic;">List All Historical Events Under Person</span>
+							<input id="searchAllProgram" type="checkbox" style="vertical-align:bottom;" /><span data-l10n-id="searchProgramPerson" nameId='SearchAllProgram' style="color:#222222; font-style:italic;"></span>&nbsp;&nbsp;&nbsp;
+							<input id="listAllPersonHistoricalEvents" type="checkbox" style="vertical-align:bottom;" /><span data-l10n-id="listEventsPerson" nameId='ListAllHistoricalEvents' style="color:#222222; font-style:italic;"></span>
 						</td>
 					  </tr>
 					  <tr id="searchResultMsgRow" style="display:none;">
@@ -6260,7 +6284,7 @@
 	<div style="line-height:5px;"></div>
 	<br>
 
-	<div id="mainSection_Person" class="tbStyle_Person">
+	<div id="mainSection_Person" class="tbStyle_Person" style="display:none;" >
 
 		<table id="mainTable_Person" border="1" class="tbStyle_Person" style="font-size:small;">
 			<colgroup>
@@ -6269,37 +6293,37 @@
 			</colgroup>
 		</table>	
 		<div style="margin-top:4px;">
-		<button type="button" id="person_addNewRow" class="input_button" ><span nameId='AddNewRow'>Add new row</span></button>
+		<button type="button" id="person_addNewRow" class="input_button" ><span data-l10n-id="addNewRow" nameId='AddNewRow'></span></button>
 		</div>
 	</div>
 
 
-	<div id="mainSection_Event" class="tbStyle_Person">
+	<div id="mainSection_Event" class="tbStyle_Person" style="display:none;">
 		<table id="mainTable_Event" border="1" class="tbStyle_PersonDetail" style="margin-left: 0px;font-size:small;">
 			<tr class='trEventHead'>
-				<th class='orig' align='center'><span nameId='EventTableHeader_Date'>Date</span></th>
+				<th class='orig' align='center'><span data-l10n-id="date" nameId='EventTableHeader_Date'></span></th>
 				<th class='orig'></th>
-				<th class='orig' align='center'><span nameId='EventTableHeader_Status'>Status</span></th>
+				<th class='orig' align='center'><span data-l10n-id="status" nameId='EventTableHeader_Status'></span></th>
 				<th class='orig' type='delete'>&nbsp;</th>
 			</tr>
 		</table>
-		<button type='button' class='personEvent_addNewRow input_button' style="margin-top:4px;"><span nameId='AddNewEventRow'>Add Event</span></button>
+		<button type='button' class='personEvent_addNewRow input_button' style="margin-top:4px;display:none;"><span data-l10n-id="addEvent" nameId='AddNewEventRow'></span></button>
 	</div>
 
 
 	<br>
 
 	<div id="translationTagDiv" style="display:none;">
-		<span nameId='AddPerson'>Add Person</span>
-		<span nameId='UpdatePerson'>Update Person</span>
+		<span data-l10n-id="addPerson" nameId='AddPerson'></span>
+		<span data-l10n-id="updatePerson" nameId='UpdatePerson'></span>
 
-		<span nameId='EventTableHeader_Date_OrgUnit'>Date / OrgUnit</span>
-		<span nameId='EventTableHeader_Program_Stage'>Program / Stage</span>
-		<span nameId='EventTableHeader_Status'>Status</span>
-		<span nameId='AddNewEventRow'>Add Event</span>
+		<span data-l10n-id="dateOrgunit" nameId='EventTableHeader_Date_OrgUnit'></span>
+		<span data-l10n-id="programAndStage" nameId='EventTableHeader_Program_Stage'></span>
+		<span data-l10n-id="status" nameId='EventTableHeader_Status'></span>
+		<span data-l10n-id="addEvent" nameId='AddNewEventRow'></span>
 
-		<span nameId='CreateEvent'>Create</span>
-		<span nameId='CompleteEvent'>Complete</span>
+		<span data-l10n-id="create" nameId='CreateEvent'></span>
+		<span data-l10n-id="complete" nameId='CompleteEvent'></span>
 
 		<span class="msg_MandatoryFill" nameId='Msg_MandatoryFill'>[Message] Mandatory field has to be filled.</span>
 		<span class="msg_NoProgramAttributes" nameId='Msg_NoProgramAttributes'>[Message] The selected program does not have any person attribtues.</span>

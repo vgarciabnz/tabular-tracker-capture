@@ -1,1 +1,24 @@
-{"version":"1.14","name":"Tabular Tracker And Event Capture","launch_path":"index.html","installs_allowed_from":null,"default_locale":"en","description":"Tabular Event And Tracker Capture","icons":{"16":null,"48":"img/icons/icon.png","128":null},"developer":{"url":"","name":"James Chang","company":null,"email":null},"activities":{"dhis":{"href":"http://localhost:8080"}},"folderName":null,"baseUrl":null,"launchUrl":null}
+{
+	"version":"1.14"
+	,"name":"Tabular Tracker And Event Capture"
+	,"launch_path":"index.html"
+	,"installs_allowed_from":null
+	,"default_locale":"en"
+	,"locales": {
+		"es": {
+			"name" : "Entrada tabular",
+			"description" : "Para ayudar con la entrada"
+		}
+	}
+	,"description":"Tabular Event And Tracker Capture"
+	,"icons":{"16":null,"48":"img/icons/icon.png","128":null}
+	,"developer":{"url":"","name":"James Chang","company":null,"email":null}
+	,"activities":{
+		"dhis":{
+			"href":"http://localhost:8080"
+		}
+	}
+	,"folderName":null
+	,"baseUrl":null
+	,"launchUrl":null
+}
