@@ -606,3 +606,19 @@ Util.getNextRowFocus_Person = function( trCurrent )
 	return nextRowPersonTag;
 }
 
+Util.checkIfVersionOverTarget = function( currentVersion, targetVersion )
+{
+	var current = currentVersion.split(".");
+	var target = targetVersion.split(".");
+	
+	for (var index in current) {
+		if( !current[index] || (current[index] < target[index]) ){
+			return false;
+		} else if( !target[index] || (current[index] > target[index]) ){
+			return true;
+		}
+		// If equals, continue to lower level
+	}
+	// If equals, return false
+	return false;
+}

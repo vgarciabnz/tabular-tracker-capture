@@ -60,6 +60,8 @@
 
 		var _queryURL_me = _queryURL_api + "me";
 
+		var _queryURL_systemInfo = _queryURL_api + "system/info"
+
 		var _queryURL_appTitle = _queryURL_api + 'systemSettings?key=applicationTitle';
 
 		var _queryURL_OrgUnit = _queryURL_api + "organisationUnits";
@@ -95,6 +97,8 @@
 
 		var _weekStartDate;
 		var _weekEndDate;
+
+		var _isOver2_16 = false;
 
 		// =========================================================
 		// On Page Load Run
@@ -379,12 +383,31 @@
 				});
 			}
 
+			this.checkIfVersionOver2_16 = function()
+			{
+				// Look for DHIS version in web api
+				RESTUtil.getAsynchData( _queryURL_systemInfo
+				, function( json_data ) 
+				{
+					var version = json_data.version;
+					console.log(version);
+					_isOver2_16 = Util.checkIfVersionOverTarget( version, "2.16" );
+					if( _isOver2_16 ){
+						EventUtil.preferredOptionGenerator = EventUtil.over2_16_OptionGenerator;
+					} else {
+						EventUtil.preferredOptionGenerator = EventUtil.defaultOptionGenerator;
+					} 
+				});
+			}
+
 			// ========================================================
 
 			this.initialSetup = function( )
 			{	
 
 				me.setupTopSection();
+
+				me.checkIfVersionOver2_16();
 
 				// get Setting Data to keep in memory and check for required setting data for this app.
 				me.settingForm.loadSettingDataInitially_AndCheckRequired();
@@ -3609,7 +3632,7 @@
 									me.TabularDEObj.dataInMemory.retrieveOptionSets( json_DataElement.optionSet.id, function( json_OptionSets )
 									{
 										$.each( json_OptionSets.options.sort(), function( i_Option, item_Option) {   
-											 cntrDropdown.append("<option>" + item_Option + "</option>");
+											 cntrDropdown.append( EventUtil.preferredOptionGenerator( item_Option ) );
 										});
 									});
 								}
@@ -3651,7 +3674,8 @@
 					Util.disableTag( $( this ), true );
 				});
 			}
-
+			
+			
 			// Set Event DataElement Controls
 			// =========================================================
 
@@ -5878,6 +5902,17 @@
 
 		// (Functions not yet populated much - move from PersonEvent class)
 
+		EventUtil.preferredOptionGenerator;
+		
+		EventUtil.defaultOptionGenerator = function( item_Option )
+		{
+			return "<option value='" + item_Option + "'>" + item_Option + "</option>";
+		}
+		
+		EventUtil.over2_16_OptionGenerator = function( item_Option )
+		{
+			return "<option value='" + item_Option.code + "'>" + item_Option.name + "</option>";
+		}
 
 
 		// Static Classes
